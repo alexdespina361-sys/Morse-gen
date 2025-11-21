@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 // import { HistoryItem } from '../types.ts';
 
@@ -7,22 +8,38 @@ interface HistoryPanelProps {
 }
 
 export const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onClear }) => {
+  const [showAll, setShowAll] = useState(false);
+
   if (history.length === 0) return null;
+
+  const displayedHistory = showAll ? history : history.slice(0, 1);
 
   return (
     <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 mt-6 w-full">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-teal-400">History ({history.length})</h3>
-        <button 
-            onClick={onClear}
-            className="text-xs bg-slate-700 hover:bg-red-500/80 text-slate-300 hover:text-white px-3 py-1 rounded transition-colors"
-        >
-            Clear History
-        </button>
+        <h3 className="text-xl font-bold text-teal-400">
+            {showAll ? `History (${history.length})` : 'Latest Result'}
+        </h3>
+        <div className="flex gap-2">
+            {history.length > 1 && (
+                <button 
+                    onClick={() => setShowAll(!showAll)}
+                    className="text-xs bg-slate-700 hover:bg-teal-600 text-slate-300 hover:text-white px-3 py-1 rounded transition-colors"
+                >
+                    {showAll ? 'Show Less' : 'Show All History'}
+                </button>
+            )}
+            <button 
+                onClick={onClear}
+                className="text-xs bg-slate-700 hover:bg-red-500/80 text-slate-300 hover:text-white px-3 py-1 rounded transition-colors"
+            >
+                Clear
+            </button>
+        </div>
       </div>
       <div className="space-y-4">
-        {history.map((item, index) => (
-            <HistoryItemView key={item.id} item={item} isLatest={index === 0} />
+        {displayedHistory.map((item, index) => (
+            <HistoryItemView key={item.id} item={item} isLatest={index === 0 && !showAll} />
         ))}
       </div>
     </div>
@@ -69,7 +86,7 @@ const HistoryItemView: React.FC<{ item: any; isLatest: boolean }> = ({ item, isL
   return (
     <div 
       onClick={toggleExpand}
-      className={`p-4 rounded-lg border border-slate-700 cursor-pointer transition-colors hover:bg-slate-750 ${isLatest ? 'bg-slate-700/30' : 'bg-slate-800'}`}
+      className={`p-4 rounded-lg border border-slate-700 cursor-pointer transition-colors hover:bg-slate-750 ${isLatest ? 'bg-slate-700/30 border-teal-500/30' : 'bg-slate-800'}`}
     >
       <div className="flex justify-between items-center mb-2">
         <span className="text-xs text-slate-500 font-mono">{dateStr}</span>

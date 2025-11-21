@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // Get globals
@@ -23,9 +24,14 @@ function App() {
   });
   
   const [playState, setPlayState] = useState(PlayState.IDLE);
+  
+  // generatedText is the full planned text
   const [generatedText, setGeneratedText] = useState('');
+  
+  // playedText tracks what has actually been outputted by audio so far
+  const [playedText, setPlayedText] = useState('');
+  
   const [userTranscript, setUserTranscript] = useState('');
-  const [displayIndex, setDisplayIndex] = useState(-1); 
   const [history, setHistory] = useState(() => {
       const saved = localStorage.getItem('morse_history');
       return saved ? JSON.parse(saved) : [];
@@ -33,11 +39,14 @@ function App() {
 
   const audioEngineRef = useRef(new AudioEngine());
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Refs for accessing latest state inside async/cleanup
   const playedTextRef = useRef(''); 
   const userTranscriptRef = useRef('');
 
-  // Keep ref in sync for the cleanup/save logic
+  // Sync refs
   useEffect(() => { userTranscriptRef.current = userTranscript; }, [userTranscript]);
+  useEffect(() => { playedTextRef.current = playedText; }, [playedText]);
 
   // Audio Engine Init
   useEffect(() => {
@@ -104,13 +113,12 @@ function App() {
     }
     audioEngineRef.current.stopTone();
     setPlayState(PlayState.FINISHED);
-    setDisplayIndex(-1);
     saveHistory();
   }, [saveHistory]);
 
   const handleStop = () => {
       stopPlayback();
-      setPlayState(PlayState.IDLE);
+      setPlayState(PlayState.IDLE); // Go to idle on manual stop
   };
 
   const wait = (ms: number, signal: AbortSignal) => {
@@ -127,7 +135,74 @@ function App() {
       });
   };
 
-  const playMorseSequence = async (text: string) => {
+  // Generic player for a string of text
+  const playSequence = async (text: string, signal: AbortSignal, onChar?: (char: string) => void) => {
+      const dotDuration = getTimingUnits(settings.wpm);
+      const sequence = textToMorseSequence(text);
+      
+      // Used to track when we have finished playing a specific character
+      let lastCharPlayed = '';
+
+      for (let i = 0; i < sequence.length; i++) {
+          if (signal.aborted) break;
+
+          const item = sequence[i];
+
+          // Detect new character start to trigger callback for the PREVIOUS character
+          // Or trigger callback after the character finishes?
+          // Let's trigger callback when we start playing a character's first symbol,
+          // or better, when we finish the character spacing. 
+          // The requirement is "show each one as its audio is played".
+          
+          // Simple approach: If we encounter a 'char' property and it's different or new index
+          if (item.char && onChar) {
+              // We only want to call onChar once per actual character in the text.
+              // The sequence array has multiple dots/dashes for one char.
+              // We look ahead: if this is the first symbol of a char.
+              const isFirstSymbolOfChar = i === 0 || sequence[i-1].char !== item.char || sequence[i-1].type === 'wordSpace' || sequence[i-1].type === 'charSpace';
+              
+              if (isFirstSymbolOfChar) {
+                   // We schedule the visual update. 
+                   // To make it sync with audio, we do it here.
+                   onChar(item.char);
+              }
+          }
+          
+          if (item.type === 'dot') {
+              audioEngineRef.current.playTone(settings.frequency, settings.volume);
+              await wait(dotDuration, signal);
+              audioEngineRef.current.stopTone();
+              await wait(dotDuration, signal); 
+          } else if (item.type === 'dash') {
+              audioEngineRef.current.playTone(settings.frequency, settings.volume);
+              await wait(dotDuration * 3, signal);
+              audioEngineRef.current.stopTone();
+              await wait(dotDuration, signal);
+          } else if (item.type === 'charSpace') {
+              // Standard char space is 3 dots. 1 dot is already consumed by element gap.
+              // Wait 2 more.
+              await wait(dotDuration * 2, signal);
+              // Extra spacing
+              if (settings.charSpacing > 3) {
+                   const extra = (settings.charSpacing - 3) * dotDuration;
+                   if (extra > 0) await wait(extra, signal);
+              }
+          } else if (item.type === 'wordSpace') {
+              // Standard word space is 7 dots. Previous element was char end (1 dot).
+              // Wait 6 more.
+              if (onChar) onChar(' '); // Visually add space
+              await wait(dotDuration * 6, signal);
+              // Extra spacing
+              if (settings.wordSpacing > 7) {
+                  const extra = (settings.wordSpacing - 7) * dotDuration;
+                  if (extra > 0) await wait(extra, signal);
+              }
+          }
+      }
+  };
+
+  const handleStart = async () => {
+      // Setup
       audioEngineRef.current.init();
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
@@ -135,62 +210,29 @@ function App() {
       setPlayState(PlayState.PLAYING);
       setUserTranscript('');
       userTranscriptRef.current = '';
+      setPlayedText('');
+      playedTextRef.current = '';
       
-      const dotDuration = getTimingUnits(settings.wpm);
-      const sequence = textToMorseSequence(text);
-      
-      let charIndex = 0;
+      // Generate Text
+      const lesson = LESSONS.find((l: any) => l.id === settings.selectedLessonId);
+      let charset = lesson ? lesson.chars : settings.customCharset;
+      if (!charset) charset = 'KM';
+      const textToPlay = generateRandomText(charset, settings.numCharacters, settings.groupSize);
+      setGeneratedText(textToPlay);
 
       try {
-          // Pre-start delay
-          await wait(500, signal);
-
-          for (let i = 0; i < sequence.length; i++) {
-              if (signal.aborted) break;
-
-              const item = sequence[i];
-
-              // Update visual tracker if it's a new character
-              if (item.char && i > 0 && sequence[i-1].char !== item.char) {
-                  charIndex++;
-              } else if (i === 0 && item.char) {
-                  // first char
-              }
-              
-              // Map logic char index to string index (approximate for visualization)
-              setDisplayIndex(charIndex);
-
-              if (item.type === 'dot') {
-                  audioEngineRef.current.playTone(settings.frequency, settings.volume);
-                  await wait(dotDuration, signal);
-                  audioEngineRef.current.stopTone();
-                  await wait(dotDuration, signal); // inter-element gap
-              } else if (item.type === 'dash') {
-                  audioEngineRef.current.playTone(settings.frequency, settings.volume);
-                  await wait(dotDuration * 3, signal);
-                  audioEngineRef.current.stopTone();
-                  await wait(dotDuration, signal); // inter-element gap
-              } else if (item.type === 'charSpace') {
-                  // 3 dots total (1 is already handled by inter-element, add 2)
-                  await wait(dotDuration * 2, signal);
-                  if (settings.charSpacing > 3) {
-                       // Extra spacing from settings
-                       const extra = (settings.charSpacing - 3) * dotDuration;
-                       if (extra > 0) await wait(extra, signal);
-                  }
-              } else if (item.type === 'wordSpace') {
-                  // 7 dots total (1 inter-element + 2 charSpace + 4 more)
-                  // Simplification: Standard word space is 7 dots.
-                  // Previous element was char end (1 dot wait).
-                  // Need to wait 6 more.
-                  await wait(dotDuration * 6, signal);
-                  if (settings.wordSpacing > 7) {
-                      const extra = (settings.wordSpacing - 7) * dotDuration;
-                      if (extra > 0) await wait(extra, signal);
-                  }
-                  charIndex++; // Counts as a position in visual string
-              }
+          // 1. Play Pre-Start Text (if any)
+          if (settings.preStartText && settings.preStartText.trim().length > 0) {
+              // We don't update playedText for pre-start
+              await playSequence(settings.preStartText, signal);
+              // Wait a word space before starting lesson
+              await wait(getTimingUnits(settings.wpm) * 7, signal); 
           }
+
+          // 2. Play Main Text
+          await playSequence(textToPlay, signal, (char) => {
+             setPlayedText(prev => prev + char);
+          });
 
           stopPlayback();
 
@@ -199,28 +241,6 @@ function App() {
               console.error("Playback error", err);
           }
       }
-  };
-
-  const handleStart = async () => {
-      let textToPlay = '';
-      
-      // 1. Select source text
-      const lesson = LESSONS.find((l: any) => l.id === settings.selectedLessonId);
-      let charset = lesson ? lesson.chars : settings.customCharset;
-      
-      // If custom chars is empty, fallback
-      if (!charset) charset = 'KM';
-
-      textToPlay = generateRandomText(charset, settings.numCharacters, settings.groupSize);
-      
-      setGeneratedText(textToPlay);
-      playedTextRef.current = textToPlay;
-      
-      // 2. Handle Pre-start VVV if needed (prepend to audio, but not to target text for scoring)
-      // For simplicity in this version, we just play the text generated.
-      // If you wanted 'VVVV' prefix, we'd need to chain two play sequences.
-      
-      await playMorseSequence(textToPlay);
   };
 
   const handleKeyPress = (char: string) => {
@@ -249,9 +269,11 @@ function App() {
               }
               return;
           }
-          // Valid morse chars
           if (/^[a-zA-Z0-9]$/.test(e.key)) {
               handleKeyPress(e.key.toUpperCase());
+          }
+          if (e.key === ' ') {
+               handleKeyPress(' ');
           }
       };
       
@@ -294,26 +316,23 @@ function App() {
           <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 md:p-10 min-h-[200px] flex flex-col justify-center items-center text-center shadow-inner relative overflow-hidden">
             
             {!settings.transcriptionMode ? (
-                // Presentation Mode
+                // Presentation Mode: Show characters as they accumulate (playedText)
                 <div className="font-mono text-4xl md:text-5xl leading-relaxed tracking-widest break-all text-slate-200">
-                    {generatedText ? (
-                         generatedText.split('').map((char, idx) => {
-                            const isActive = idx === displayIndex && playState === PlayState.PLAYING;
-                            return (
-                                <span 
-                                    key={idx} 
-                                    className={`${isActive ? 'text-teal-400 bg-teal-400/10 scale-110 inline-block transition-transform' : 'text-slate-500'}`}
-                                >
-                                    {char === ' ' ? '\u00A0' : char}
-                                </span>
-                            );
-                         })
+                    {playedText ? (
+                         playedText.split('').map((char, idx) => (
+                            <span 
+                                key={idx} 
+                                className="text-teal-400 inline-block animate-in fade-in zoom-in duration-100"
+                            >
+                                {char === ' ' ? '\u00A0' : char}
+                            </span>
+                         ))
                     ) : (
                         <span className="text-slate-600 text-xl">Press Play to Start</span>
                     )}
                 </div>
             ) : (
-                // Transcription Mode (Hide text while playing)
+                // Transcription Mode
                 <div className="w-full">
                     {playState === PlayState.PLAYING ? (
                          <div className="animate-pulse flex flex-col items-center gap-4">
@@ -322,10 +341,18 @@ function App() {
                              </div>
                              <span className="text-teal-400 font-mono text-sm tracking-widest">INCOMING TRANSMISSION</span>
                          </div>
-                    ) : generatedText ? (
+                    ) : playedText ? (
+                        // When stopped/finished, show what was played
                         <div className="text-left">
                             <p className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Target Text</p>
-                            <p className="font-mono text-xl text-slate-400 mb-6 break-all bg-slate-900/50 p-4 rounded">{generatedText}</p>
+                            <p className="font-mono text-xl text-slate-400 mb-6 break-all bg-slate-900/50 p-4 rounded">
+                                {playedText}
+                            </p>
+                            {playState === PlayState.IDLE && generatedText.length > playedText.length && (
+                                <p className="text-xs text-red-400/60 mt-2">
+                                    (Transmission stopped early)
+                                </p>
+                            )}
                         </div>
                     ) : (
                          <span className="text-slate-600 text-xl">Press Play to Start Transcription</span>
@@ -362,7 +389,7 @@ function App() {
                         onClick={handleStart}
                         className="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold py-4 rounded-lg shadow-lg shadow-teal-500/20 transition-all transform active:scale-98"
                     >
-                        {generatedText && playState === PlayState.FINISHED ? 'PLAY AGAIN' : 'START LESSON'}
+                        {playedText ? 'PLAY AGAIN' : 'START LESSON'}
                     </button>
                 )}
              </div>

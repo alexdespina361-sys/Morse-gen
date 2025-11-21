@@ -1,3 +1,4 @@
+
 // import { Lesson, AppSettings } from './types.ts'; // Removed for browser compatibility
 
 export const MORSE_CODE: Record<string, string> = {
@@ -23,14 +24,14 @@ export const LESSONS: any[] = [
 ];
 
 export const DEFAULT_SETTINGS: any = {
-  wpm: 18,
-  frequency: 750,
+  wpm: 20,
+  frequency: 600,
   volume: 0.5,
-  charSpacing: 25, 
-  wordSpacing: 25,
-  groupSize: 4,
-  numCharacters: 120,
-  preStartText: 'VVVV',
+  charSpacing: 3, // Standard Morse character spacing is 3 dots
+  wordSpacing: 7, // Standard Morse word spacing is 7 dots
+  groupSize: 5,
+  numCharacters: 20,
+  preStartText: 'VVV',
   showCurrentChar: false,
   transcriptionMode: true,
   selectedLessonId: 'lesson5',
