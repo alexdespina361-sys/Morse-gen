@@ -1,6 +1,6 @@
 import React from 'react';
-import { AppSettings } from '../types';
-import { LESSONS, DEFAULT_SETTINGS } from '../constants';
+import { AppSettings } from '../types.ts';
+import { LESSONS, DEFAULT_SETTINGS } from '../constants.ts';
 
 interface ControlPanelProps {
   settings: AppSettings;

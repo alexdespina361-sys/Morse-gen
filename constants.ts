@@ -1,4 +1,4 @@
-import { Lesson, AppSettings } from './types';
+import { Lesson, AppSettings } from './types.ts';
 
 export const MORSE_CODE: Record<string, string> = {
   'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',

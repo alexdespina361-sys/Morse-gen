@@ -1,4 +1,4 @@
-import { MORSE_CODE } from '../constants';
+import { MORSE_CODE } from '../constants.ts';
 
 export const generateRandomText = (charset: string, length: number, groupSize: number): string => {
   if (!charset) return '';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HistoryItem } from '../types';
+import { HistoryItem } from '../types.ts';
 
 interface HistoryPanelProps {
   history: HistoryItem[];

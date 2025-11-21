@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { AppSettings, HistoryItem, PlayState } from './types';
-import { DEFAULT_SETTINGS, MORSE_CODE, LESSONS } from './constants';
-import { AudioEngine } from './services/AudioEngine';
-import { ControlPanel } from './components/ControlPanel';
-import { Keypad } from './components/Keypad';
-import { HistoryPanel } from './components/HistoryPanel';
-import { generateRandomText, getTimingUnits } from './utils/morseLogic';
+import { AppSettings, HistoryItem, PlayState } from './types.ts';
+import { DEFAULT_SETTINGS, MORSE_CODE, LESSONS } from './constants.ts';
+import { AudioEngine } from './services/AudioEngine.ts';
+import { ControlPanel } from './components/ControlPanel.tsx';
+import { Keypad } from './components/Keypad.tsx';
+import { HistoryPanel } from './components/HistoryPanel.tsx';
+import { generateRandomText, getTimingUnits } from './utils/morseLogic.ts';
 
 function App() {
   // --- State ---
