@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { HistoryItem } from '../types.ts';
+// import { HistoryItem } from '../types.ts';
 
 interface HistoryPanelProps {
-  history: HistoryItem[];
+  history: any[];
   onClear: () => void;
 }
 
@@ -29,7 +29,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onClear }) 
   );
 };
 
-const HistoryItemView: React.FC<{ item: HistoryItem; isLatest: boolean }> = ({ item, isLatest }) => {
+const HistoryItemView: React.FC<{ item: any; isLatest: boolean }> = ({ item, isLatest }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   const dateStr = new Date(item.timestamp).toLocaleString();
@@ -38,8 +38,6 @@ const HistoryItemView: React.FC<{ item: HistoryItem; isLatest: boolean }> = ({ i
     setIsExpanded(!isExpanded);
   };
 
-  // Render a comparison of target vs user input
-  // Note: This is a simple diff based on index.
   const renderDiff = () => {
     const target = item.targetText.replace(/\s/g, '');
     const user = item.userTranscript.replace(/\s/g, '');
@@ -54,9 +52,9 @@ const HistoryItemView: React.FC<{ item: HistoryItem; isLatest: boolean }> = ({ i
         if (t && u) {
             colorClass = t.toUpperCase() === u.toUpperCase() ? 'text-green-400' : 'text-red-400';
         } else if (t && !u) {
-            colorClass = 'text-slate-500'; // Missed
+            colorClass = 'text-slate-500';
         } else if (!t && u) {
-            colorClass = 'text-red-400'; // Extra
+            colorClass = 'text-red-400';
         }
 
         elements.push(
@@ -80,7 +78,6 @@ const HistoryItemView: React.FC<{ item: HistoryItem; isLatest: boolean }> = ({ i
         </div>
       </div>
       
-      {/* Mode specific display */}
       {item.mode === 'presentation' ? (
          <div className="mb-2">
             <div className="text-xs text-teal-500 uppercase font-bold tracking-wider mb-1">Practice Mode</div>
@@ -119,3 +116,5 @@ const HistoryItemView: React.FC<{ item: HistoryItem; isLatest: boolean }> = ({ i
     </div>
   );
 };
+
+(window as any).HistoryPanel = HistoryPanel;

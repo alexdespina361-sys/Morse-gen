@@ -1,4 +1,5 @@
-import { MORSE_CODE } from '../constants.ts';
+// Get global constants
+const { MORSE_CODE } = window as any;
 
 export const generateRandomText = (charset: string, length: number, groupSize: number): string => {
   if (!charset) return '';
@@ -10,7 +11,6 @@ export const generateRandomText = (charset: string, length: number, groupSize: n
     const randomIndex = Math.floor(Math.random() * chars.length);
     result += chars[randomIndex];
     
-    // Add space after group size, but not at the very end
     if ((i + 1) % groupSize === 0 && i !== length - 1) {
       result += ' ';
     }
@@ -20,8 +20,6 @@ export const generateRandomText = (charset: string, length: number, groupSize: n
 };
 
 export const getTimingUnits = (wpm: number) => {
-  // Standard Paris definition: 50 units per word "PARIS "
-  // Time for one unit (dot) in milliseconds
   const dotDurationMs = 1200 / wpm; 
   return dotDurationMs;
 };
@@ -40,16 +38,11 @@ export const textToMorseSequence = (text: string) => {
     const morse = MORSE_CODE[char];
     if (!morse) continue;
 
-    // Add symbols for this char
     for (let j = 0; j < morse.length; j++) {
       const symbol = morse[j];
       sequence.push({ type: symbol === '.' ? 'dot' : 'dash', char });
-      
-      // Inter-element gap (1 unit) is handled by the player logic as a pause after sound
     }
 
-    // Inter-character gap happens after the letter is finished
-    // Unless it's the last character or next is a space
     if (i < text.length - 1 && text[i+1] !== ' ') {
       sequence.push({ type: 'charSpace' });
     }
@@ -57,3 +50,8 @@ export const textToMorseSequence = (text: string) => {
 
   return sequence;
 };
+
+// Attach to window
+(window as any).generateRandomText = generateRandomText;
+(window as any).getTimingUnits = getTimingUnits;
+(window as any).textToMorseSequence = textToMorseSequence;

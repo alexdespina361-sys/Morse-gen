@@ -1,6 +1,10 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
+
+// In the browser standalone environment, we grab App from the window object
+// where it was attached by App.tsx
+const App = (window as any).App;
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

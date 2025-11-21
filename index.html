@@ -17,12 +17,10 @@
       .font-mono {
         font-family: 'JetBrains Mono', monospace;
       }
-      /* Custom Range Slider Styling for Teal Accent */
       input[type=range] {
         -webkit-appearance: none; 
         background: transparent; 
       }
-      
       input[type=range]::-webkit-slider-thumb {
         -webkit-appearance: none;
         height: 20px;
@@ -32,7 +30,6 @@
         cursor: pointer;
         margin-top: -8px; 
       }
-      
       input[type=range]::-webkit-slider-runnable-track {
         width: 100%;
         height: 4px;
@@ -40,12 +37,9 @@
         background: #334155; /* Slate 700 */
         border-radius: 2px;
       }
-      
       input[type=range]:focus::-webkit-slider-runnable-track {
         background: #475569;
       }
-
-      /* Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -66,17 +60,30 @@
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0?dev",
-    "react/": "https://esm.sh/react@19.0.0/",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client?dev",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
   }
 }
 </script>
   </head>
   <body>
     <div id="root"></div>
-    <!-- Type text/babel with data-type module allows importing other files -->
+    
+    <!-- Load scripts in dependency order. We use data-type="module" to allow 'import React' -->
+    <!-- We attach exports to window to share between files without a bundler -->
+    
+    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./types.ts"></script>
+    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./constants.ts"></script>
+    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./utils/morseLogic.ts"></script>
+    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./services/AudioEngine.ts"></script>
+    
+    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./components/Keypad.tsx"></script>
+    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./components/ControlPanel.tsx"></script>
+    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./components/HistoryPanel.tsx"></script>
+    
+    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./App.tsx"></script>
     <script type="text/babel" data-type="module" data-presets="react,typescript" src="./index.tsx"></script>
   </body>
 </html>

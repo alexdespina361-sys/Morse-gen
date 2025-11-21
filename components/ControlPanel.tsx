@@ -1,18 +1,18 @@
 import React from 'react';
-import { AppSettings } from '../types.ts';
-import { LESSONS, DEFAULT_SETTINGS } from '../constants.ts';
+
+// Get globals
+const { LESSONS, DEFAULT_SETTINGS } = window as any;
 
 interface ControlPanelProps {
-  settings: AppSettings;
-  onSettingsChange: (newSettings: AppSettings) => void;
+  settings: any;
+  onSettingsChange: (newSettings: any) => void;
   onReset: () => void;
   disabled: boolean;
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({ settings, onSettingsChange, onReset, disabled }) => {
   
-  const handleChange = (key: keyof AppSettings, value: any) => {
-    // Mutual exclusion logic
+  const handleChange = (key: string, value: any) => {
     if (key === 'showCurrentChar' && value === true) {
       onSettingsChange({ ...settings, showCurrentChar: true, transcriptionMode: false });
     } else if (key === 'transcriptionMode' && value === true) {
@@ -22,7 +22,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ settings, onSettings
     }
   };
 
-  const currentLesson = LESSONS.find(l => l.id === settings.selectedLessonId) || LESSONS[0];
+  const currentLesson = LESSONS.find((l: any) => l.id === settings.selectedLessonId) || LESSONS[0];
 
   return (
     <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 space-y-6">
@@ -37,7 +37,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ settings, onSettings
          </button>
       </div>
       
-      {/* Lesson Selector */}
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-2">Lesson</label>
         <select
@@ -46,13 +45,12 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ settings, onSettings
           onChange={(e) => handleChange('selectedLessonId', e.target.value)}
           className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-3 focus:ring-2 focus:ring-teal-500 outline-none"
         >
-          {LESSONS.map(l => (
+          {LESSONS.map((l: any) => (
             <option key={l.id} value={l.id}>{l.name}</option>
           ))}
         </select>
       </div>
 
-      {/* Custom Charset Input - Only if Custom is selected */}
       {settings.selectedLessonId === 'custom' && (
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-2">Custom Chars</label>
@@ -71,7 +69,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ settings, onSettings
         Using: {settings.selectedLessonId === 'custom' ? settings.customCharset : currentLesson.chars}
       </div>
 
-      {/* Pre-start Text */}
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-2">Pre-start Text (Audio only)</label>
         <input
@@ -85,7 +82,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ settings, onSettings
 
       <hr className="border-slate-700" />
 
-      {/* Sliders */}
       <div className="space-y-4">
         <Slider
           label="Speed"
@@ -145,7 +141,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ settings, onSettings
         />
       </div>
 
-      {/* Toggles */}
       <div className="flex flex-col gap-3 pt-2">
         <label className="flex items-center gap-3 cursor-pointer">
           <input
@@ -201,3 +196,5 @@ const Slider: React.FC<{
     />
   </div>
 );
+
+(window as any).ControlPanel = ControlPanel;

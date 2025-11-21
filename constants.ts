@@ -1,4 +1,4 @@
-import { Lesson, AppSettings } from './types.ts';
+// import { Lesson, AppSettings } from './types.ts'; // Removed for browser compatibility
 
 export const MORSE_CODE: Record<string, string> = {
   'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
@@ -12,17 +12,17 @@ export const MORSE_CODE: Record<string, string> = {
   '=': '-...-'
 };
 
-export const LESSONS: Lesson[] = [
+export const LESSONS: any[] = [
   { id: 'lesson1', name: 'Lesson 1: K M', chars: 'KM' },
   { id: 'lesson2', name: 'Lesson 2: K M R S', chars: 'KMRS' },
   { id: 'lesson3', name: 'Lesson 3: K M R S U A', chars: 'KMRSUA' },
   { id: 'lesson4', name: 'Lesson 4: K M R S U A P T', chars: 'KMRSUAPT' },
   { id: 'lesson5', name: 'Lesson 5: All Letters', chars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' },
   { id: 'lesson6', name: 'Numbers', chars: '0123456789' },
-  { id: 'custom', name: 'Custom Characters', chars: '' }, // Chars taken from custom input
+  { id: 'custom', name: 'Custom Characters', chars: '' },
 ];
 
-export const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: any = {
   wpm: 18,
   frequency: 750,
   volume: 0.5,
@@ -36,3 +36,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   selectedLessonId: 'lesson5',
   customCharset: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
 };
+
+// Attach to window
+(window as any).MORSE_CODE = MORSE_CODE;
+(window as any).LESSONS = LESSONS;
+(window as any).DEFAULT_SETTINGS = DEFAULT_SETTINGS;

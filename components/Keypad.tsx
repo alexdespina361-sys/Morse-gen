@@ -8,10 +8,7 @@ interface KeypadProps {
 }
 
 export const Keypad: React.FC<KeypadProps> = ({ onKeyPress, onDelete, disabled, availableChars }) => {
-  // Filter keys to show only those in availableChars
-  // If availableChars is empty (fallback), we might show all, but per requirements we filter.
   const keysToShow = availableChars.toUpperCase().split('').filter((char, index, self) => {
-    // Deduplicate and ensure valid character
     return self.indexOf(char) === index && /[A-Z0-9]/.test(char);
   }).sort();
 
@@ -47,3 +44,5 @@ export const Keypad: React.FC<KeypadProps> = ({ onKeyPress, onDelete, disabled, 
     </div>
   );
 };
+
+(window as any).Keypad = Keypad;
